@@ -165,9 +165,9 @@ include 'includes/header.php';
                         </span>
                     </td>
                     <td>
-                        <a href="events/view.php?id=<?= $event['id'] ?>" class="btn btn-sm btn-info">View</a>
+                        <a href="pages/events/view.php?id=<?= $event['id'] ?>" class="btn btn-sm btn-info">View</a>
                         <?php if ($_SESSION['user_id'] == $event['created_by'] || is_admin()): ?>
-                            <a href="events/edit.php?id=<?= $event['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
+                            <a href="pages/events/edit.php?id=<?= $event['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
                             <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure?')">
                                 <input type="hidden" name="event_id" value="<?= $event['id'] ?>">
                                 <button type="submit" name="delete_event" class="btn btn-sm btn-danger">Delete</button>

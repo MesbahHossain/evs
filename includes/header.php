@@ -26,7 +26,7 @@ require_once 'functions.php';
                     </li>
                     <?php if (is_logged_in()): ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="./pages/events/create.php">Create Event</a>
+                        <a class="nav-link" href="/evs-home/pages/events/create.php">Create Event</a>
                     </li>
                     <?php if (is_admin()): ?>
                     <li class="nav-item">

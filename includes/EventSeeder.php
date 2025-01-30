@@ -7,6 +7,7 @@ class EventSeeder {
             [
                 'title' => 'Tech Conference 2025',
                 'description' => 'A conference for tech enthusiasts and professionals.',
+                'img' => 'tech-conference.jpg',
                 'date' => '2025-03-15',
                 'time' => '09:00:00',
                 'location' => 'Tech Center, Silicon Valley',
@@ -17,6 +18,7 @@ class EventSeeder {
             [
                 'title' => 'Web Development Workshop',
                 'description' => 'Hands-on workshop on modern web development techniques.',
+                'img' => 'web-development-workshop.jpg',
                 'date' => '2025-04-10',
                 'time' => '10:00:00',
                 'location' => 'Community Hall, Downtown',
@@ -27,6 +29,7 @@ class EventSeeder {
             [
                 'title' => 'Networking Event 2025',
                 'description' => 'A networking event for professionals and entrepreneurs.',
+                'img' => 'networking-event.jpg',
                 'date' => '2025-05-05',
                 'time' => '14:00:00',
                 'location' => 'Convention Center, Downtown',
@@ -37,6 +40,7 @@ class EventSeeder {
             [
                 'title' => 'Gaming Event 2025',
                 'description' => 'A gaming event for gamers and enthusiasts.',
+                'img' => 'gaming-event.jpg',
                 'date' => '2025-06-20',
                 'time' => '17:00:00',
                 'location' => 'Gaming Zone, Silicon Valley',
@@ -47,6 +51,7 @@ class EventSeeder {
             [
                 'title' => 'Music Concert',
                 'description' => 'A concert for music lovers and enthusiasts.',
+                'img' => 'music-concert.jpg',
                 'date' => '2025-07-15',
                 'time' => '19:00:00',
                 'location' => 'Music Hall, Downtown',
@@ -58,10 +63,11 @@ class EventSeeder {
         ];
 
         foreach ($events as $event) {
-            $stmt = $pdo->prepare("INSERT INTO events (title, description, date, time, location, capacity, created_by, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO events (title, description, img, date, time, location, capacity, created_by, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $event['title'],
                 $event['description'],
+                $event['img'],
                 $event['date'],
                 $event['time'],
                 $event['location'],

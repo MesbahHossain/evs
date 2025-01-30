@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/config.php';
 require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
 redirect_if_not_logged_in();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -8,70 +9,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = htmlspecialchars($_POST['description']);
     // Add validation for all fields
     
-    // Handle image upload
-    $target_dir = "uploads/";
-    $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
-    $uploadOk = 1;
-    $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
+    if (isset($_FILES['fileToUpload'])) {
+       $uploadOk = image_upload($_FILES);
 
-    // Check if image file is a actual image or fake image
-    if(isset($_POST["submit"])) {
-    $check = getimagesize($_FILES["fileToUpload"]["tmp_name"]);
-    if($check !== false) {
-        echo "File is an image - " . $check["mime"] . ".";
-        $uploadOk = 1;
+        // Check if $uploadOk is set to 0 by an error
+        if ($uploadOk != 0) {
+            if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
+                echo "<script> alert('The file ". htmlspecialchars( basename( $_FILES["fileToUpload"]["name"])). " has been uploaded.')</script>";
+            
+                $stmt = $pdo->prepare("INSERT INTO events 
+                    (title, description, img, date, time, location, capacity, created_by, category)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $title,
+                    $description,
+                    basename($_FILES["fileToUpload"]["name"]),
+                    $_POST['date'],
+                    $_POST['time'],
+                    $_POST['location'],
+                    $_POST['capacity'],
+                    $_SESSION['user_id'],
+                    $_POST['category']
+                ]);
+                
+                header('Location: ../../index.php');
+                exit;
+            } else {
+                echo "Sorry, there was an error uploading your file.";
+            }
+        }
     } else {
-        echo "File is not an image.";
-        $uploadOk = 0;
+        // Handle the case where the file was not uploaded
+        echo "No file was uploaded.";
     }
-    }
-
-    // Check if file already exists
-    if (file_exists($target_file)) {
-    echo "Sorry, file already exists.";
-    $uploadOk = 0;
-    }
-
-    // Check file size
-    if ($_FILES["fileToUpload"]["size"] > 200000) {
-    echo "Sorry, your file is too large.";
-    $uploadOk = 0;
-    }
-
-    // Allow certain file formats
-    if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg"
-    && $imageFileType != "gif" && $imageFileType != "webp" ) {
-    echo "Sorry, only JPG, JPEG, PNG, WebP & GIF files are allowed.";
-    $uploadOk = 0;
-    }
-
-    // Check if $uploadOk is set to 0 by an error
-    if ($uploadOk == 0) {
-    echo "Sorry, your file was not uploaded.";
-    // if everything is ok, try to upload file
-    } else {
-    if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
-        echo "The file ". htmlspecialchars( basename( $_FILES["fileToUpload"]["name"])). " has been uploaded.";
-    } else {
-        echo "Sorry, there was an error uploading your file.";
-    }
-    }
-    
-    $stmt = $pdo->prepare("INSERT INTO events 
-        (title, description, date, time, location, capacity, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([
-        $title,
-        $description,
-        $_POST['date'],
-        $_POST['time'],
-        $_POST['location'],
-        $_POST['capacity'],
-        $_SESSION['user_id']
-    ]);
-    
-    header('Location: ../../index.php');
-    exit;
 }
 ?>
 
@@ -87,7 +57,7 @@ include '../../includes/header.php';
             <form method="POST" action="create.php" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="image" class="form-label">Image</label>
-                    <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
+                    <input type="file" class="form-control" id="image" name="fileToUpload" accept="image/*" required>
                 </div>
                 <div class="mb-3">
                     <label for="title" class="form-label">Title</label>
