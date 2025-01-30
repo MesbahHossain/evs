@@ -68,6 +68,16 @@ body {
 
 }
 
+.btn-register {
+    border: 1px solid rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.8);
+    text-shadow: none;
+    color: white;
+}
+.btn-register:hover {
+    background: none;
+}
+
 .other-events {
     background-color: #f0f0f0;
 }
