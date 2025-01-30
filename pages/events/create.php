@@ -10,33 +10,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Add validation for all fields
     
     if (isset($_FILES['fileToUpload'])) {
-       $uploadOk = image_upload($_FILES);
+       $uploadOk = image_upload($_FILES['fileToUpload']);
 
         // Check if $uploadOk is set to 0 by an error
-        if ($uploadOk != 0) {
-            if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
-                echo "<script> alert('The file ". htmlspecialchars( basename( $_FILES["fileToUpload"]["name"])). " has been uploaded.')</script>";
+        if ($uploadOk != 0) {            
+            $stmt = $pdo->prepare("INSERT INTO events 
+                (title, description, img, date, time, location, capacity, created_by, category)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $title,
+                $description,
+                basename($_FILES["fileToUpload"]["name"]),
+                $_POST['date'],
+                $_POST['time'],
+                $_POST['location'],
+                $_POST['capacity'],
+                $_SESSION['user_id'],
+                $_POST['category']
+            ]);
             
-                $stmt = $pdo->prepare("INSERT INTO events 
-                    (title, description, img, date, time, location, capacity, created_by, category)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([
-                    $title,
-                    $description,
-                    basename($_FILES["fileToUpload"]["name"]),
-                    $_POST['date'],
-                    $_POST['time'],
-                    $_POST['location'],
-                    $_POST['capacity'],
-                    $_SESSION['user_id'],
-                    $_POST['category']
-                ]);
-                
-                header('Location: ../../index.php');
-                exit;
-            } else {
-                echo "Sorry, there was an error uploading your file.";
-            }
+            header('Location: ../../index.php');
+            exit;
         }
     } else {
         // Handle the case where the file was not uploaded

@@ -3,10 +3,7 @@ require_once '../includes/config.php';
 require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 
-if (is_logged_in()) {
-    header('Location: index.php');
-    exit;
-}
+redirect_if_logged_in();
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -28,7 +25,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['is_admin'] = $user['is_admin'] ?? false;
 
                 add_flash_message('success', 'Login successful!');
-                header('Location: ../index.php');
+                // Redirect to the correct page based on the user's role
+                if ($_SESSION['is_admin']) {
+                    header('Location: ../dashboard.php');
+                } else {
+                    header('Location: ../index.php');
+                }
                 exit;
             } else {
                 $error = 'Invalid email or password';
@@ -75,30 +77,5 @@ include '../includes/header.php';
         </div>
     </div>
 </div>
-
-<script>
-    /**
-     * Validates the login form. If the email or password fields are empty, an alert is
-     * shown and the function returns false. Otherwise, the function returns true.
-     * @returns {boolean} Whether the form is valid.
-     */
-    const validateLoginForm = () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        if (email.trim() === '' || password.trim() === '') {
-            alert('Email and password are required.');
-            return false;
-        }
-
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;;
-        if (!emailRegex.test(email)) {
-            alert('Please enter a valid email address.');
-            return false;
-        }
-
-        return true;
-    };
-</script>
 
 <?php include '../includes/footer.php'; ?>

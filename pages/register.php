@@ -3,10 +3,7 @@ require_once '../includes/config.php';
 require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 
-if (is_logged_in()) {
-    header('Location: index.php');
-    exit;
-}
+redirect_if_logged_in();
 
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -67,7 +64,7 @@ include '../includes/header.php';
                         </div>
                     <?php endif; ?>
 
-                    <form method="POST" onsubmit="return validateForm()">
+                    <form method="POST" onsubmit="return validateRegisterForm()">
                         <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
 
                         <div class="mb-3">
@@ -98,32 +95,5 @@ include '../includes/header.php';
         </div>
     </div>
 </div>
-
-<script>
-    function validateForm() {
-        const name = document.getElementById('name').value;
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const confirm_password = document.getElementById('confirm_password').value;
-
-        if (name.trim() === '' || email.trim() === '' || password.trim() === '' || confirm_password.trim() === '') {
-            alert('All fields are required.');
-            return false;
-        }
-
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;;
-        if (!emailRegex.test(email)) {
-            alert('Please enter a valid email address.');
-            return false;
-        }
-
-        if (password !== confirm_password) {
-            alert('Passwords do not match.');
-            return false;
-        }
-
-        return true;
-    };
-</script>
 
 <?php include '../includes/footer.php'; ?>

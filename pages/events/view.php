@@ -5,7 +5,7 @@ require_once '../../includes/functions.php';
 redirect_if_not_logged_in();
 
 if (!isset($_GET['id'])) {
-    header('Location: ../../index.php');
+    header('Location: ../../dashboard.php');
     exit;
 }
 
@@ -24,7 +24,7 @@ $event = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$event) {
     add_flash_message('danger', 'Event not found');
-    header('Location: ../../index.php');
+    header('Location: ../../dashboard.php');
     exit;
 }
 
@@ -71,28 +71,20 @@ include '../../includes/header.php';
                         </div>
                     </div>
                     
-                    <?php if ($_SESSION['user_id'] == $event['created_by'] || is_admin()): ?>
-                    <div class="mt-4">
+                    <div class="mt-2">
+                    <?php if ($_SESSION['user_id'] == $event['created_by'] && is_admin()): ?>
                         <a href="edit.php?id=<?= $event['id'] ?>" class="btn btn-warning">Edit Event</a>
                         <a href="delete.php?id=<?= $event['id'] ?>" class="btn btn-danger">Delete Event</a>
+                    <?php elseif(!is_admin()):
+                        if ($registered < $event['capacity']): ?>
+                            <a href="../attendees/register.php?event_id=<?= $event['id'] ?>" class="btn btn-success w-100">
+                                Register Now
+                            </a>
+                        <?php else: ?>
+                            <div class="alert alert-warning">This event is fully booked</div>
+                        <?php endif; ?>
+                    <?php endif; ?>
                     </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Register for this Event</h5>
-                    <?php if ($registered < $event['capacity']): ?>
-                        <a href="../attendees/register.php?event_id=<?= $event['id'] ?>" 
-                           class="btn btn-success w-100">
-                            Register Now
-                        </a>
-                    <?php else: ?>
-                        <div class="alert alert-warning">This event is fully booked</div>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>

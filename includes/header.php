@@ -26,11 +26,11 @@ require_once 'functions.php';
                     </li>
                     <?php if (is_logged_in()): ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="/evs-home/pages/events/create.php">Create Event</a>
+                        <a class="nav-link" href="/evs-office/pages/events/create.php">Create Event</a>
                     </li>
                     <?php if (is_admin()): ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="/report.php">Reports</a>
+                        <a class="nav-link" href="/evs-office/report.php">Reports</a>
                     </li>
                     <?php endif; ?>
                     <?php endif; ?>
@@ -41,14 +41,14 @@ require_once 'functions.php';
                         <span class="nav-link">Welcome, <?= htmlspecialchars($_SESSION['name']) ?></span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="logout.php">Logout</a>
+                        <a class="nav-link" href="/evs-office/logout.php">Logout</a>
                     </li>
                     <?php else: ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="pages/login.php">Login</a>
+                        <a class="nav-link" href="/evs-office/pages/login.php">Login</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="pages/register.php">Register</a>
+                        <a class="nav-link" href="/evs-office/pages/register.php">Register</a>
                     </li>
                     <?php endif; ?>
                 </ul>

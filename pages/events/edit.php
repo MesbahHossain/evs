@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($stmt->execute([
         $title,
         $description,
-        $image,
+        basename($_FILES["fileToUpload"]["name"]),
         $date,
         $time,
         $location,
@@ -108,9 +108,7 @@ include '../../includes/header.php';
                 
                 <div class="mb-3">
                     <label for="description" class="form-label">Description</label>
-                    <textarea class="form-control" id="description" name="description" rows="3">
-                        <?= htmlspecialchars($event['description']) ?>
-                    </textarea>
+                    <textarea class="form-control" id="description" name="description" rows="3"><?= htmlspecialchars($event['description']) ?></textarea>
                 </div>
                 
                 <div class="mb-3">

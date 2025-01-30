@@ -1,209 +1,129 @@
 <?php
 require_once 'includes/config.php';
 require_once 'includes/auth.php';
-redirect_if_not_logged_in();
-
-// Pagination
-$per_page = 2;
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$page = max($page, 1);
-$offset = ($page - 1) * $per_page;
-
-// Sorting
-$sort = isset($_GET['sort']) ? $_GET['sort'] : 'date';
-$order = isset($_GET['order']) && strtoupper($_GET['order']) === 'DESC' ? 'DESC' : 'ASC';
-$allowed_sort = ['title', 'date', 'location', 'category', 'capacity'];
-$sort = in_array($sort, $allowed_sort) ? $sort : 'date';
-
-// Filtering
-$location_filter = isset($_GET['location']) ? trim($_GET['location']) : '';
-$date_filter = isset($_GET['event_date']) ? trim($_GET['event_date']) : '';
-$category_filter = isset($_GET['category']) ? trim($_GET['category']) : '';
-
-// Base query
-// $query = "SELECT e.*, u.name as organizer, 
-//           (SELECT COUNT(*) FROM attendees WHERE event_id = e.id) AS registered
-//           FROM events e
-//           JOIN users u ON e.created_by = u.id";
-
-// Base query
-$query = "SELECT e.*, u.name as organizer, ec.name as category_name, 
-          (SELECT COUNT(*) FROM attendees WHERE event_id = e.id) AS registered
-          FROM events e
-          JOIN users u ON e.created_by = u.id
-          LEFT JOIN event_categories ec ON e.category = ec.id"; // Join with event_categories
-
-// Rest of your filtering and sorting code remains unchanged...
-
-$where = [];
-$params = [];
-
-// Apply filters
-if (!empty($location_filter)) {
-    $where[] = "location LIKE ?";
-    $params[] = "%$location_filter%";
-}
-
-if (!empty($date_filter)) {
-    $where[] = "date = ?";
-    $params[] = $date_filter;
-}
-
-if (!empty($category_filter)) {
-    $where[] = "category = ?";
-    $params[] = $category_filter;
-}
-
-// Add where clause if filters exist
-if (!empty($where)) {
-    $query .= " WHERE " . implode(" AND ", $where);
-}
-
-// Add sorting and pagination
-$query .= " ORDER BY $sort $order LIMIT :per_page OFFSET :offset";
-$params['per_page'] = $per_page;
-$params['offset'] = $offset;
-
-// Prepare and execute with named parameters
-$stmt = $pdo->prepare($query);
-foreach ($params as $key => $value) {
-    $param_type = is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR;
-    $stmt->bindValue(":$key", $value, $param_type);
-}
-$stmt->execute();
-$events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Get total count for pagination
-$count_query = "SELECT COUNT(*) FROM events e";
-if (!empty($where)) {
-    $count_query .= " WHERE " . implode(" AND ", $where);
-}
-$count_stmt = $pdo->prepare($count_query);
-$count_stmt->execute(array_slice($params, 0, -2));
-$total_events = $count_stmt->fetchColumn();
-$total_pages = ceil($total_events / $per_page);
-
-// Delete event handling
-if (isset($_POST['delete_event'])) {
-    $event_id = (int)$_POST['event_id'];
-    $stmt = $pdo->prepare("DELETE FROM events WHERE id = ? AND created_by = ?");
-    $stmt->execute([$event_id, $_SESSION['user_id']]);
-    header("Location: index.php");
-    exit;
-}
 ?>
-
-<?php 
-$pageTitle = "Dashboard - Event Management System";
-include 'includes/header.php'; 
-?>
-
-<div class="container mt-4">
-    <h2>Event List</h2>
-    
-    <!-- Filter Form -->
-    <form class="mb-4 bg-light p-3 rounded">
-        <div class="row">
-            <div class="col-md-4">
-                <input type="text" name="location" class="form-control" 
-                       placeholder="Filter by location" value="<?= htmlspecialchars($location_filter) ?>">
-            </div>
-            <div class="col-md-3">
-                <input type="date" name="event_date" class="form-control" 
-                       value="<?= htmlspecialchars($date_filter) ?>">
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary">Filter</button>
-                <a href="index.php" class="btn btn-secondary">Reset</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Homepage</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <header class="bg-dark text-white py-3">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="navbar-brand text-decoration-none text-white" href="index.php">
+                <h1 class="fw-bold mb-0">EVS</h1>
+                <p class="mb-0">Event Management System</p>
+            </a>
+            <div class="nav-buttons">
+                <?php if (is_logged_in()): ?>
+                    <span class="d-none d-sm-inline border-end pe-2 me-2">Welcome, <?= htmlspecialchars($_SESSION['name']) ?></span>
+                    <a href="logout.php" class="btn btn-secondary me-sm-2">Logout</a>
+                <?php else: ?>
+                    <a href="/evs-office/pages/login.php" class="btn btn-secondary me-sm-2">Login</a>
+                    <a href="/evs-office/pages/register.php" class="btn btn-primary">Register</a>
+                <?php endif; ?>
             </div>
         </div>
-    </form>
+    </header>
 
-    <!-- Event Table -->
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="thead-dark">
-                <tr>
-                    <th>
-                        <a href="?sort=title&order=<?= $sort === 'title' && $order === 'ASC' ? 'DESC' : 'ASC' ?>">
-                            Title <?= $sort === 'title' ? ($order === 'ASC' ? '↑' : '↓') : '' ?>
-                        </a>
-                    </th>
-                    <th>
-                        <a href="?sort=date&order=<?= $sort === 'date' && $order === 'ASC' ? 'DESC' : 'ASC' ?>">
-                            Date <?= $sort === 'date' ? ($order === 'ASC' ? '↑' : '↓') : '' ?>
-                        </a>
-                    </th>
-                    <th>
-                        <a href="?sort=location&order=<?= $sort === 'location' && $order === 'ASC' ? 'DESC' : 'ASC' ?>">
-                            Location <?= $sort === 'location' ? ($order === 'ASC' ? '↑' : '↓') : '' ?>
-                        </a>
-                    </th>
-                    <th>
-                        <a href="?sort=category&order=<?= $sort === 'category' && $order === 'ASC' ? 'DESC' : 'ASC' ?>">
-                            Category <?= $sort === 'category' ? ($order === 'ASC' ? '↑' : '↓') : '' ?>
-                        </a>
-                    </th>
-                    <th>
-                        <a href="?sort=capacity&order=<?= $sort === 'capacity' && $order === 'ASC' ? 'DESC' : 'ASC' ?>">
-                            Capacity <?= $sort === 'capacity' ? ($order === 'ASC' ? '↑' : '↓') : '' ?>
-                        </a>
-                    </th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($events as $event): ?>
-                <tr>
-                    <td><?= htmlspecialchars($event['title']) ?></td>
-                    <td><?= date('M j, Y', strtotime($event['date'])) ?></td>
-                    <td><?= htmlspecialchars($event['location']) ?></td>
-                    <td><?= htmlspecialchars($event['category_name']) ?></td>
-                    <td>
-                        <span class="badge <?= $event['registered'] >= $event['capacity'] ? 'bg-danger' : 'bg-success' ?>">
-                            <?= $event['registered'] ?>/<?= $event['capacity'] ?>
-                        </span>
-                    </td>
-                    <td>
-                        <a href="pages/events/view.php?id=<?= $event['id'] ?>" class="btn btn-sm btn-info">View</a>
-                        <?php if ($_SESSION['user_id'] == $event['created_by'] || is_admin()): ?>
-                            <a href="pages/events/edit.php?id=<?= $event['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
-                            <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure?')">
-                                <input type="hidden" name="event_id" value="<?= $event['id'] ?>">
-                                <button type="submit" name="delete_event" class="btn btn-sm btn-danger">Delete</button>
-                            </form>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
+    <section class="hero-event py-sm-5">
+        <?php 
+        // Fetch closest upcoming event
+        $stmt_closest = $pdo->query("
+            SELECT e.*, u.name as organizer, ec.name as category_name
+            FROM events e
+            JOIN users u ON e.created_by = u.id
+            LEFT JOIN event_categories ec ON e.category = ec.id
+            WHERE e.date >= CURDATE()
+            ORDER BY e.date ASC
+            LIMIT 1
+        ");
+        $closest_event = $stmt_closest->fetch(PDO::FETCH_ASSOC);
+        ?>
+        
+        <?php if ($closest_event): ?>
+        <div class="container text-center bg-glass">
+            <h2 id="hero-title" class="mb-4">
+                <span class="d-none d-sm-inline">Next Event: </span><?= htmlspecialchars($closest_event['title']) ?>
+            </h2>
+            <div id="countdown" class="countdown mb-4" data-date="<?= $closest_event['date'] ?> <?= $closest_event['time'] ?>">
+                <div class="countdown-section">
+                    <span id="days"></span>
+                    <p>Days</p>
+                </div>
+                <div class="countdown-section">
+                    <span id="hours"></span>
+                     <p>Hours</p>
+                </div>
+                <div class="countdown-section">
+                    <span id="minutes"></span>
+                    <p>Minutes</p>
+                </div>
+                <div class="countdown-section">
+                    <span id="seconds"></span>
+                     <p>Seconds</p>
+                </div>
+            </div>
+            <p id="hero-description" class="lead mb-1">Join us for the ultimate tech experience!</p>
+            <p class="mb-4">Location: <?= htmlspecialchars($closest_event['location']) ?></p>
+            <a href="register.php?event_id=<?= $closest_event['id'] ?>" class="btn btn-register btn-lg">Register Now</a>
+        </div>
+        <?php else: ?>
+        <div class="container text-center bg-glass">
+            <h2 class="mb-4">No upcoming events found</h2>
+        </div>
+        <?php endif; ?>
+    </section>
 
-    <!-- Pagination -->
-    <nav>
-        <ul class="pagination justify-content-center">
-            <?php if ($page > 1): ?>
-                <li class="page-item">
-                    <a class="page-link" href="?page=<?= $page - 1 ?>&sort=<?= $sort ?>&order=<?= $order ?>">Previous</a>
-                </li>
-            <?php endif; ?>
+    <?php
+    // Fetch all upcoming events (excluding the closest one)
+    $stmt_upcoming = $pdo->query("
+        SELECT e.*, u.name as organizer, ec.name as category_name
+        FROM events e
+        JOIN users u ON e.created_by = u.id
+        LEFT JOIN event_categories ec ON e.category = ec.id
+        WHERE e.date >= CURDATE()" . 
+        ($closest_event ? " AND e.id != " . $closest_event['id'] : "") . "
+        ORDER BY e.date ASC
+    ");
+    $upcoming_events = $stmt_upcoming->fetchAll(PDO::FETCH_ASSOC);
+    ?>
+    <section class="other-events py-5">
+        <div class="container">
+            <h2 class="text-center mb-4">Upcoming Events</h2>
+            <div class="row">
+                <?php if (!empty($upcoming_events)): ?>
+                    <?php foreach ($upcoming_events as $event): ?>
+                    <div class="col-md-4 mb-4">
+                        <div class="event-card">
+                            <img src="uploads/<?= htmlspecialchars($event['img']) ?>" alt="<?= htmlspecialchars($event['title']) ?>" class="event-image img-fluid">
+                            <div class="event-content">
+                                <h3 class="event-title"><?= htmlspecialchars($event['title']) ?></h3>
+                                <p class="event-date">Date: <?= date('M j, Y', strtotime($event['date'])) ?></p>
+                                <a href="register.php?event_id=<?= $event['id'] ?>" class="btn btn-secondary btn-sm">Attend</a>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="col-12 text-center">
+                        <p>No other upcoming events</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </section>
 
-            <?php if($total_pages > 1) :
-            for ($i = 1; $i <= $total_pages; $i++): ?>
-                <li class="page-item <?= $i === $page ? 'active' : '' ?>">
-                    <a class="page-link" href="?page=<?= $i ?>&sort=<?= $sort ?>&order=<?= $order ?>"><?= $i ?></a>
-                </li>
-            <?php endfor;
-            endif; ?>
+    <footer class="bg-dark text-white py-2 text-center">
+        <p class="my-1">© 2025 EVS. All rights reserved.</p>
+    </footer>
 
-            <?php if ($page < $total_pages): ?>
-                <li class="page-item">
-                    <a class="page-link" href="?page=<?= $page + 1 ?>&sort=<?= $sort ?>&order=<?= $order ?>">Next</a>
-                </li>
-            <?php endif; ?>
-        </ul>
-    </nav>
-</div>
-
-<?php include 'includes/footer.php'; ?>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/script.js"></script>
+</body>
+</html>

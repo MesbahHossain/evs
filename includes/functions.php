@@ -42,43 +42,49 @@ function format_date($date_string) {
 }
 
 function image_upload($file) {
-     // Handle image upload
-     $target_dir = "../../uploads/";
-     $target_file = $target_dir . basename($file["fileToUpload"]["name"]);
-     $uploadOk = 1;
-     $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
+    echo 'filename <pre>',print_r($file),'</pre>';
+    // Handle image upload
+    $target_dir = "../../uploads/";
+    echo $target_file = $target_dir . basename($file["name"]);
+    $uploadOk = 1;
+    $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
 
-     // Check if image file is a actual image or fake image
-     if(isset($_POST["submit"])) {
-     $check = getimagesize($file["fileToUpload"]["tmp_name"]);
-     if($check !== false) {
-         echo "<script> alert('File is an image - " . $check["mime"] . ".')</script>";
-         $uploadOk = 1;
-     } else {
-         echo "<script> alert('File is not an image.')</script>";
-         $uploadOk = 0;
-     }
-     }
-
-     // Check if file already exists
-     // if (file_exists($target_file)) {
-     // echo "<script> alert('Sorry, file already exists.')</script>";
-     // $uploadOk = 0;
-     // }
-
-     // Check file size
-     if ($file["fileToUpload"]["size"] > 200000) {
-     echo "<script> alert('Sorry, your file is too large.')</script>";
-     $uploadOk = 0;
-     }
-
-     // Allow certain file formats
-     if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg"
-     && $imageFileType != "gif" && $imageFileType != "webp" ) {
-        echo "<script> alert('Sorry, only JPG, JPEG, PNG, WebP & GIF files are allowed.')</script>";
+    // Check if image file is a actual image or fake image
+    if(isset($_POST["submit"])) {
+    $check = getimagesize($file["tmp_name"]);
+    if($check !== false) {
+        echo "<script> alert('File is an image - " . $check["mime"] . ".')</script>";
+        $uploadOk = 1;
+    } else {
+        echo "<script> alert('File is not an image.')</script>";
         $uploadOk = 0;
-     }
+    }
+    }
 
-     return $uploadOk;
+    // Check if file already exists
+    // if (file_exists($target_file)) {
+    // echo "<script> alert('Sorry, file already exists.')</script>";
+    // $uploadOk = 0;
+    // }
+
+    // Check file size
+    if ($file["size"] > 200000) {
+    echo "<script> alert('Sorry, your file is too large.')</script>";
+    $uploadOk = 0;
+    }
+
+    // Allow certain file formats
+    if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg"
+    && $imageFileType != "gif" && $imageFileType != "webp" ) {
+    echo "<script> alert('Sorry, only JPG, JPEG, PNG, WebP & GIF files are allowed.')</script>";
+    $uploadOk = 0;
+    }
+    if ($uploadOk = 1 && move_uploaded_file($file["tmp_name"], $target_file)) {
+        // echo "<script> alert('The file ". htmlspecialchars( basename( $file["name"])). " has been uploaded.')</script>";
+    } else {
+        echo "<script> alert('Sorry, there was an error uploading your file.')</script>";
+    }
+
+    return $uploadOk;
 }
 ?>

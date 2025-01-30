@@ -1,0 +1,163 @@
+body {
+    font-family: sans-serif;
+}
+
+.hero-event {
+    background-color: #f8f9fa;
+    background-image: url('https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=2012&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.hero-event h2,
+.hero-event p {
+    color: #fff;
+}
+
+.bg-glass {
+    background: rgba(46, 36, 36, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    border: 1px solid rgba(46, 36, 36, 0.25);
+    padding: 20px 0;
+    max-width: 700px;
+}
+
+.countdown {
+    display: flex;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 8px;
+    padding: 15px;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+.countdown-section {
+    text-align: center;
+    margin: 0 15px;
+    position: relative; /* Make this relative for divider positioning */
+}
+
+/*Divider style*/
+.countdown-section:not(:last-child)::after{
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: -15px;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 50%;
+    background-color: #666;
+}
+.countdown-section span{
+    display: block;
+    font-size: 2em;
+    font-weight: bold;
+    line-height: 40px;
+    margin: 0 20px;
+}
+.countdown-section p {
+    font-size: 0.9em;
+    color: #ccc;
+    margin: 0;
+
+}
+
+.btn-register {
+    border: 1px solid rgba(0, 0, 0, 0.8) !important;
+    background: rgba(0, 0, 0, 0.8);
+    text-shadow: none;
+    color: white;
+    transition: all 0.3s ease;
+}
+.btn-register:hover {
+    background: none;
+    text-shadow: unset;
+}
+
+.other-events {
+    background-color: #f0f0f0;
+}
+
+.event-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #fff;
+    transition: transform 0.3s ease;
+}
+
+.event-card:hover {
+    transform: scale(1.05);
+}
+
+.event-image {
+    /* height: 200px; */
+    object-fit: cover;
+}
+
+.event-content {
+    padding: 15px;
+}
+
+.event-title {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+.event-date {
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.btn-secondary {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+/* Adjusting for smaller devices */
+@media (max-width: 768px) {
+    .event-card {
+        margin-bottom: 20px;
+    }
+    .countdown{
+        font-size: 1em;
+    }
+    .countdown-section span{
+        font-size: 1.5em;
+    }
+    .countdown-section:not(:last-child)::after{
+      height: 60%;
+    }
+}
+
+/* add css for mobile device */
+@media (max-width: 576px) {
+    .navbar-brand p{
+        font-size: 13px;
+    }
+    .nav-buttons a {
+        font-size: 14px;
+        padding: 5px 10px;
+    }
+
+    .bg-glass {
+        padding: 40px 0;
+    }
+    .countdown-section span {
+        margin: 0;
+        font-size: 20px;
+    }
+}
