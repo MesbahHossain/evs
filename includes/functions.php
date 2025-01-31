@@ -32,9 +32,16 @@ function validate_csrf_token($token) {
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
-function redirect($url) {
-    header("Location: $url");
-    exit;
+function create_session_and_redirect($user) {
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['name'] = $user['name'];
+    $_SESSION['is_admin'] = $user['is_admin'] ?? false;
+    
+    if ($_SESSION['is_admin']) {
+        header('Location: ./../dashboard.php');
+    } else {
+        header('Location: ./../index.php');
+    }
 }
 
 function format_date($date_string) {

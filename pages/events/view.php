@@ -2,10 +2,9 @@
 require_once '../../includes/config.php';
 require_once '../../includes/auth.php';
 require_once '../../includes/functions.php';
-redirect_if_not_logged_in();
 
 if (!isset($_GET['id'])) {
-    header('Location: ../../dashboard.php');
+    header('Location: ./../../index.php');
     exit;
 }
 
@@ -24,7 +23,7 @@ $event = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$event) {
     add_flash_message('danger', 'Event not found');
-    header('Location: ../../dashboard.php');
+    header('Location: ./../../index.php');
     exit;
 }
 
@@ -32,6 +31,19 @@ if (!$event) {
 $stmt = $pdo->prepare("SELECT COUNT(*) FROM attendees WHERE event_id = ?");
 $stmt->execute([$event_id]);
 $registered = $stmt->fetchColumn();
+
+// Get registration status for current user
+$is_registered = false;
+if (is_logged_in()) {
+    $stmt = $pdo->prepare("
+        SELECT EXISTS(
+            SELECT 1 FROM attendees 
+            WHERE event_id = ? AND user_id = ?
+        ) AS is_registered
+    ");
+    $stmt->execute([$event_id, $_SESSION['user_id']]);
+    $is_registered = (bool)$stmt->fetchColumn();
+}
 
 $pageTitle = $event['title'] . " - Event Details";
 include '../../includes/header.php';
@@ -72,18 +84,32 @@ include '../../includes/header.php';
                     </div>
                     
                     <div class="mt-2">
-                    <?php if ($_SESSION['user_id'] == $event['created_by'] && is_admin()): ?>
-                        <a href="edit.php?id=<?= $event['id'] ?>" class="btn btn-warning">Edit Event</a>
-                        <a href="delete.php?id=<?= $event['id'] ?>" class="btn btn-danger">Delete Event</a>
-                    <?php elseif(!is_admin()):
-                        if ($registered < $event['capacity']): ?>
-                            <a href="../attendees/register.php?event_id=<?= $event['id'] ?>" class="btn btn-success w-100">
-                                Register Now
+                        <?php if(!is_logged_in()): ?>
+                            <a href="login.php" 
+                            class="btn btn-success w-100 register-btn" 
+                            data-event-id="<?= $event['id'] ?>">
+                                Login to Register
                             </a>
-                        <?php else: ?>
-                            <div class="alert alert-warning">This event is fully booked</div>
+                        <?php else: 
+                            if ($_SESSION['user_id'] == $event['created_by'] || is_admin()): ?>
+                                <a href="edit.php?id=<?= $event['id'] ?>" class="btn btn-warning">Edit Event</a>
+                                <a href="delete.php?id=<?= $event['id'] ?>" class="btn btn-danger">Delete Event</a>
+                            <?php else: ?>
+                                <?php if ($is_registered): ?>
+                                    <button class="btn btn-success w-100" disabled>
+                                        ✓ Registered
+                                    </button>
+                                <?php elseif ($registered < $event['capacity']): ?>
+                                    <a href="#" 
+                                    class="btn btn-success w-100 register-btn" 
+                                    data-event-id="<?= $event['id'] ?>">
+                                        Register Now
+                                    </a>
+                                <?php else: ?>
+                                    <div class="alert alert-warning">This event is fully booked</div>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         <?php endif; ?>
-                    <?php endif; ?>
                     </div>
                 </div>
             </div>

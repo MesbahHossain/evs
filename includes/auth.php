@@ -10,20 +10,20 @@ function is_admin() {
 function redirect_if_logged_in() {
     if (is_logged_in()) {
         if(is_admin()) {
-            header('Location: /evs-office/dashboard.php');
+            header('Location: /evs-home/dashboard.php');
             exit;
         }
-        header('Location: /evs-office/index.php');
+        header('Location: /evs-home/index.php');
         exit;
     }
 }
 
 function redirect_if_not_logged_in() {
     if (!is_logged_in()) {
-        header('Location: /evs-office/pages/login.php');
+        header('Location: /evs-home/pages/login.php');
         exit;
     } elseif (!is_admin()) {
-        header('Location: /evs-office/index.php');
+        header('Location: /evs-home/index.php');
         exit;
     }
 }

@@ -33,6 +33,65 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         }, 1000);
     }
+
+    // Handle registration clicks
+    document.querySelectorAll('.register-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const eventId = button.dataset.eventId;
+            const card = button.closest('.event-card');
+
+            try {
+                const response = await fetch('/evs-home/includes/check-login.php');
+                const { loggedIn } = await response.json();
+
+                if (!loggedIn) {
+                    window.location.href = '/evs-home/pages/login.php';
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('event_id', eventId);
+
+                const registerResponse = await fetch('/evs-home/includes/attend.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await registerResponse.json();
+
+                if (result.success) {
+                    // Update the clicked button
+                    button.classList.remove('btn-secondary');
+                    button.classList.add('btn-success');
+                    button.textContent = '✓ Registered';
+                    button.disabled = true;
+                    
+                    // Update all instances of this event's capacity
+                    document.querySelectorAll(`[data-event-id="${eventId}"] .capacity-badge`).forEach(badge => {
+                        badge.textContent = `${result.new_count}/${badge.dataset.capacity}`;
+                        badge.classList.toggle('bg-danger', result.new_count >= badge.dataset.capacity);
+                        badge.classList.toggle('bg-primary', result.new_count < badge.dataset.capacity);
+                    });
+                    
+                    showNotification(result.message, 'success');
+                } else {
+                    showNotification(result.message, 'danger');
+                }
+            } catch (error) {
+                showNotification('An error occurred. Please try again.', 'danger');
+            }
+        });
+    });
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} fixed-top m-3`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => notification.remove(), 3000);
+    }
 });
 
 
