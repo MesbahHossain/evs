@@ -2,6 +2,8 @@
 require_once 'config.php';
 require_once 'auth.php';
 require_once 'functions.php';
+
+$current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -15,50 +17,68 @@ require_once 'functions.php';
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="nav-brand text-decoration-none text-white" href="/evs-home/">
-                <h1 class="fs-2 fw-bold mb-0">EVS</h1>
-                <p class="mb-0">Event Management System</p>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav m-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/evs-home/">Home</a>
-                    </li>
-                    <?php if (is_logged_in()): ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/evs-home/pages/events/create.php">Create Event</a>
-                    </li>
-                    <?php if (is_admin()): ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/evs-home/attendees.php">Attendees</a>
-                    </li>
-                    <?php endif; ?>
-                    <?php endif; ?>
-                </ul>
-                <ul class="navbar-nav">
-                    <?php if (is_logged_in()): ?>
-                    <li class="nav-item">
-                        <span class="nav-link">Welcome, <?= htmlspecialchars($_SESSION['name']) ?></span>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/evs-home/logout.php">Logout</a>
-                    </li>
-                    <?php else: ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/evs-home/login.php">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/evs-home/register.php">Register</a>
-                    </li>
-                    <?php endif; ?>
-                </ul>
+        <?php if(is_logged_in()): ?>
+            <div class="container">
+                <a class="nav-brand text-decoration-none text-white" href="/evs-home/">
+                    <h1 class="fs-2 fw-bold mb-0">EVS</h1>
+                    <p class="mb-0">Event Management System</p>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav m-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/evs-home/">Home</a>
+                        </li>
+                        <?php if (is_logged_in()): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/evs-home/dashboard.php">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/evs-home/pages/events/create.php">Create Event</a>
+                        </li>
+                        <?php if (is_admin()): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/evs-home/attendees.php">Attendees</a>
+                        </li>
+                        <?php endif; ?>
+                        <?php endif; ?>
+                    </ul>
+                    <ul class="navbar-nav">
+                        <?php if (is_logged_in()): ?>
+                        <li class="nav-item">
+                            <span class="nav-link">Welcome, <?= htmlspecialchars($_SESSION['name']) ?></span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/evs-home/logout.php">Logout</a>
+                        </li>
+                        <?php else: ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/evs-home/login.php">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/evs-home/register.php">Register</a>
+                        </li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
             </div>
-        </div>
+        <?php else: ?>
+            <div class="container d-flex justify-content-between align-items-center">
+                <a class="nav-brand text-decoration-none text-white" href="/evs-home/">
+                    <h1 class="fs-2 fw-bold mb-0">EVS</h1>
+                    <p class="mb-0">Event Management System</p>
+                </a>
+                <div class="nav-buttons">
+                    <a href="/evs-home/login.php" class="btn btn-secondary me-sm-2">Login</a>
+                    <a href="/evs-home/register.php" class="btn btn-primary">Register</a>
+                </div>
+            </div>
+        <?php endif; ?>
     </nav>
 
-    <div class="container mt-4">
+    <?php if ($current_page !== 'index.php'): ?>
+        <div class="container mt-4">
         <?php display_flash_messages(); ?>
+    <?php endif; ?>

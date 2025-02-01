@@ -5,7 +5,7 @@ require_once '../../includes/functions.php';
 redirect_if_not_logged_in();
 
 if (!isset($_GET['id'])) {
-    header('Location: ../../index.php');
+    header('Location: ../../dashboard.php');
     exit;
 }
 
@@ -19,7 +19,7 @@ $event = $stmt->fetch(PDO::FETCH_ASSOC);
 // Check ownership
 if (!$event || ($event['created_by'] != $_SESSION['user_id'] && !is_admin())) {
     add_flash_message('danger', 'You cannot edit this event');
-    header('Location: ../../index.php');
+    header('Location: ../../dashboard.php');
     exit;
 }
 

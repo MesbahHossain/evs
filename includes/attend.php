@@ -1,11 +1,6 @@
 <?php
-require_once __DIR__.'./config.php';
-require_once __DIR__.'./auth.php';
-
-if (!is_logged_in()) {
-    http_response_code(401);
-    die(json_encode(['success' => false, 'message' => 'Please login to register']));
-}
+require_once __DIR__.'/../includes/config.php';
+require_once __DIR__.'/../includes/functions.php';
 
 header('Content-Type: application/json');
 
@@ -14,22 +9,47 @@ try {
         throw new Exception('Invalid request method');
     }
 
-    $event_id = filter_input(INPUT_POST, 'event_id', FILTER_VALIDATE_INT);
-    
-    if (!$event_id) {
-        throw new Exception('Invalid event ID');
+    // Validate input
+    $required = ['event_id', 'name', 'email', 'phone', 'age', 'gender'];
+    foreach ($required as $field) {
+        if (empty($_POST[$field])) {
+            throw new Exception("$field is required");
+        }
     }
 
-    // Check if event exists and has capacity
+    $event_id = (int)$_POST['event_id'];
+    $name = clean_input($_POST['name']);
+    $email = filter_var($_POST['email'], FILTER_VALIDATE_EMAIL);
+    $phone = preg_replace('/[^0-9]/', '', $_POST['phone']);
+    $age = (int)$_POST['age'];
+
+    if (!$email) {
+        throw new Exception('Invalid email address');
+    }
+
+    if (strlen($phone) !== 11) {
+        throw new Exception('Invalid phone number');
+    }
+
+    if ($age < 1 || $age > 100) {
+        throw new Exception('Invalid age value');
+    }
+
+    $allowed_genders = ['male', 'female', 'other'];
+    $gender = $_POST['gender'];
+    if (!in_array($gender, $allowed_genders)) {
+        throw new Exception('Invalid gender selection');
+    }
+
+    // Check event capacity
     $stmt = $pdo->prepare("SELECT capacity FROM events WHERE id = ?");
     $stmt->execute([$event_id]);
-    $event = $stmt->fetch(PDO::FETCH_ASSOC);
+    $event = $stmt->fetch();
 
     if (!$event) {
         throw new Exception('Event not found');
     }
 
-    // Check current attendees
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM attendees WHERE event_id = ?");
     $stmt->execute([$event_id]);
     $registered = $stmt->fetchColumn();
@@ -38,31 +58,40 @@ try {
         throw new Exception('Event is full');
     }
 
-    // Check if already registered
-    $stmt = $pdo->prepare("SELECT id FROM attendees WHERE event_id = ? AND user_id = ?");
-    $stmt->execute([$event_id, $_SESSION['user_id']]);
-    
-    if ($stmt->fetch()) {
-        throw new Exception('Already registered for this event');
+    // Check existing registration - Fixed SQL syntax
+    $stmt = $pdo->prepare("
+        SELECT 1 FROM attendees 
+        WHERE event_id = ? AND (email = ? OR phone = ?)
+        LIMIT 1
+    ");
+    $stmt->execute([$event_id, $email, $phone]);
+    $exists = (bool)$stmt->fetchColumn();
+
+    if ($exists) {
+        throw new Exception('Email or phone already registered for this event');
     }
 
-    // Register attendee
-    $stmt = $pdo->prepare("INSERT INTO attendees (event_id, user_id, name, email) 
-                          VALUES (?, ?, ?, ?)");
-    $stmt->execute([
-        $event_id,
-        $_SESSION['user_id'],
-        $_SESSION['name'],
-        $_SESSION['email']
-    ]);
+    // Insert attendee
+    $stmt = $pdo->prepare("
+        INSERT INTO attendees (event_id, name, email, phone, age, gender)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ");
+    $stmt->execute([$event_id, $name, $email, $phone, $age, $gender]);
 
     echo json_encode([
         'success' => true,
-        'message' => 'Successfully registered for the event!',
-        'new_count' => $registered + 1
+        'message' => 'Registration successful!',
+        'registered' => $registered + 1
     ]);
 
 } catch (Exception $e) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
+}
+
+function clean_input($data) {
+    return htmlspecialchars(trim($data));
 }

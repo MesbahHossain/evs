@@ -1,69 +1,56 @@
 <?php
-require_once 'includes/config.php';
-require_once 'includes/auth.php';
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Homepage</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css">
-</head>
-<body>
-    <header class="bg-dark text-white py-3">
-        <div class="container d-flex justify-content-between align-items-center">
-            <a class="navbar-brand text-decoration-none text-white" href="index.php">
-                <h1 class="fw-bold mb-0">EVS</h1>
-                <p class="mb-0">Event Management System</p>
-            </a>
-            <div class="nav-buttons">
-                <?php if (is_logged_in()): ?>
-                    <?php echo is_admin() ? 
-                    '<a href="/evs-home/dashboard.php" class="btn btn-secondary me-sm-2">Dashboard</a>' : 
-                    '<span class="d-none d-sm-inline border-end pe-2 me-2">Welcome, ' . htmlspecialchars($_SESSION['name']) . '</span>' ?>
-                    <a href="logout.php" class="btn btn-secondary me-sm-2">Logout</a>
-                <?php else: ?>
-                    <a href="/evs-home/pages/login.php" class="btn btn-secondary me-sm-2">Login</a>
-                    <a href="/evs-home/pages/register.php" class="btn btn-primary">Register</a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </header>
+    require_once 'includes/config.php';
+    require_once 'includes/auth.php';
 
-    <section class="hero-event py-sm-5">
-        <?php 
-        // Fetch closest upcoming event
-        // $stmt_closest = $pdo->query("
-        //     SELECT e.*, u.name as organizer, ec.name as category_name
-        //     FROM events e
-        //     JOIN users u ON e.created_by = u.id
-        //     LEFT JOIN event_categories ec ON e.category = ec.id
-        //     WHERE e.date >= CURDATE()
-        //     ORDER BY e.date ASC
-        //     LIMIT 1
-        // ");
+    // Fetch closest upcoming event
+    // $stmt_closest = $pdo->query("
+    //     SELECT e.*, u.name as organizer, ec.name as category_name
+    //     FROM events e
+    //     JOIN users u ON e.created_by = u.id
+    //     LEFT JOIN event_categories ec ON e.category = ec.id
+    //     WHERE e.date >= CURDATE()
+    //     ORDER BY e.date ASC
+    //     LIMIT 1
+    // ");
 
-        // For closest event query
-        $stmt_closest = $pdo->query("
-            SELECT e.*, 
-            (SELECT COUNT(*) FROM attendees WHERE event_id = e.id) AS registered_count,
-            ". (is_logged_in() ? "(SELECT EXISTS(SELECT 1 FROM attendees WHERE event_id = e.id AND user_id = ".$_SESSION['user_id']."))" : "0"). " AS is_registered,
-            u.name as organizer, 
-            ec.name as category_name
-            FROM events e
-            JOIN users u ON e.created_by = u.id
-            LEFT JOIN event_categories ec ON e.category = ec.id
-            WHERE e.date >= CURDATE()
-            ORDER BY e.date ASC
-            LIMIT 1
-        ");
+    // For closest event query
+    $stmt_closest = $pdo->query("
+        SELECT e.*, 
+        (SELECT COUNT(*) FROM attendees WHERE event_id = e.id) AS registered_count,
+        ". (is_logged_in() ? "(SELECT EXISTS(SELECT 1 FROM attendees WHERE event_id = e.id AND user_id = ".$_SESSION['user_id']."))" : "0"). " AS is_registered,
+        u.name as organizer, 
+        ec.name as category_name
+        FROM events e
+        JOIN users u ON e.created_by = u.id
+        LEFT JOIN event_categories ec ON e.category = ec.id
+        WHERE e.date >= CURDATE()
+        ORDER BY e.date ASC
+        LIMIT 1
+    ");
 
-        $closest_event = $stmt_closest->fetch(PDO::FETCH_ASSOC);
-        ?>
-        
-        <?php if ($closest_event): ?>
+    $closest_event = $stmt_closest->fetch(PDO::FETCH_ASSOC);
+    
+    // For upcoming events query
+    $stmt_upcoming = $pdo->query("
+        SELECT e.*,
+        (SELECT COUNT(*) FROM attendees WHERE event_id = e.id) AS registered_count,
+        ". (is_logged_in() ? "(SELECT EXISTS(SELECT 1 FROM attendees WHERE event_id = e.id AND user_id = ".$_SESSION['user_id']."))" : "0"). " AS is_registered,
+        u.name as organizer, 
+        ec.name as category_name
+        FROM events e
+        JOIN users u ON e.created_by = u.id
+        LEFT JOIN event_categories ec ON e.category = ec.id
+        WHERE e.date >= CURDATE()
+        ". ($closest_event ? " AND e.id != ".$closest_event['id'] : "")."
+        ORDER BY e.date ASC
+    ");
+    $upcoming_events = $stmt_upcoming->fetchAll(PDO::FETCH_ASSOC);
+    
+    $pageTitle = "Event Management System";
+    include 'includes/header.php';
+    
+    if ($closest_event): ?>
+    <section class="hero-event py-sm-5" style="background-image: url('uploads/<?= htmlspecialchars($closest_event['img']) ?>');">
         <div class="container text-center bg-glass">
             <h2 id="hero-title" class="mb-4">
                 <span class="d-none d-sm-inline">Next Event: </span><?= htmlspecialchars($closest_event['title']) ?>
@@ -96,30 +83,13 @@ require_once 'includes/auth.php';
                 <?php endif; ?>
             </a>
         </div>
-        <?php else: ?>
-        <div class="container text-center bg-glass">
-            <h2 class="mb-4">No upcoming events found</h2>
-        </div>
-        <?php endif; ?>
     </section>
+    <?php else: ?>
+    <div class="container text-center bg-glass">
+        <h2 class="mb-4">No upcoming events found</h2>
+    </div>
+    <?php endif; ?>
 
-    <?php
-    // For upcoming events query
-    $stmt_upcoming = $pdo->query("
-        SELECT e.*,
-        (SELECT COUNT(*) FROM attendees WHERE event_id = e.id) AS registered_count,
-        ". (is_logged_in() ? "(SELECT EXISTS(SELECT 1 FROM attendees WHERE event_id = e.id AND user_id = ".$_SESSION['user_id']."))" : "0"). " AS is_registered,
-        u.name as organizer, 
-        ec.name as category_name
-        FROM events e
-        JOIN users u ON e.created_by = u.id
-        LEFT JOIN event_categories ec ON e.category = ec.id
-        WHERE e.date >= CURDATE()
-        ". ($closest_event ? " AND e.id != ".$closest_event['id'] : "")."
-        ORDER BY e.date ASC
-    ");
-    $upcoming_events = $stmt_upcoming->fetchAll(PDO::FETCH_ASSOC);
-    ?>
     <section class="other-events py-5">
         <div class="container">
             <h2 class="text-center mb-4">Upcoming Events</h2>
@@ -146,7 +116,7 @@ require_once 'includes/auth.php';
                                     <?php if ($event['is_registered']): ?>
                                         ✓ Registered
                                     <?php else: ?>
-                                        <?= is_logged_in() ? 'Attend' : 'Login to Attend' ?>
+                                        Attend
                                     <?php endif; ?>
                                 </a>
                             </div>
@@ -161,5 +131,55 @@ require_once 'includes/auth.php';
             </div>
         </div>
     </section>
+
+    <!-- Registration Modal -->
+    <div class="modal fade" id="registrationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Event Registration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="registrationForm">
+                    <div class="modal-body">
+                        <input type="hidden" name="event_id" id="modalEventId">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                            <div class="invalid-feedback">Please enter your full name</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                            <div class="invalid-feedback" id="emailError">Please enter a valid email address</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" name="phone" class="form-control" pattern="[0-9]{11}" required>
+                            <div class="invalid-feedback" id="phoneError">Please enter a valid 11-digit phone number</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Age</label>
+                            <input type="number" name="age" class="form-control" min="1" max="100" required>
+                            <div class="invalid-feedback">Please enter a valid age (1-100)</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Gender</label>
+                            <select name="gender" class="form-select" required>
+                                <option value="" disabled selected>Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <div class="invalid-feedback">Please select your gender</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Register</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
     <?php require 'includes/footer.php'; ?>

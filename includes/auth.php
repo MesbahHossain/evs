@@ -20,10 +20,7 @@ function redirect_if_logged_in() {
 
 function redirect_if_not_logged_in() {
     if (!is_logged_in()) {
-        header('Location: /evs-home/pages/login.php');
-        exit;
-    } elseif (!is_admin()) {
-        header('Location: /evs-home/index.php');
+        header('Location: /evs-home/login.php');
         exit;
     }
 }

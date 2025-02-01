@@ -5,36 +5,51 @@ require_once '../../includes/functions.php';
 redirect_if_not_logged_in();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = htmlspecialchars($_POST['title']);
-    $description = htmlspecialchars($_POST['description']);
-    // Add validation for all fields
-    
-    if (isset($_FILES['fileToUpload'])) {
-       $uploadOk = image_upload($_FILES['fileToUpload']);
-
-        // Check if $uploadOk is set to 0 by an error
-        if ($uploadOk != 0) {            
-            $stmt = $pdo->prepare("INSERT INTO events 
-                (title, description, img, date, time, location, capacity, created_by, category)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([
-                $title,
-                $description,
-                basename($_FILES["fileToUpload"]["name"]),
-                $_POST['date'],
-                $_POST['time'],
-                $_POST['location'],
-                $_POST['capacity'],
-                $_SESSION['user_id'],
-                $_POST['category']
-            ]);
-            
-            header('Location: ../../index.php');
-            exit;
+    try {
+        // Validate required fields
+        $required_fields = ['title', 'description', 'date', 'time', 'location', 'capacity', 'category'];
+        foreach ($required_fields as $field) {
+            if (empty($_POST[$field])) {
+                throw new Exception("$field is required");
+            }
         }
-    } else {
-        // Handle the case where the file was not uploaded
-        echo "No file was uploaded.";
+
+        // Check if file was uploaded
+        if (!isset($_FILES['fileToUpload']) || $_FILES['fileToUpload']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception('Please select an image file');
+        }
+
+        // Upload image
+        $upload_result = image_upload($_FILES['fileToUpload']);
+        if (!$upload_result['success']) {
+            throw new Exception($upload_result['message']);
+        }
+
+        // Insert event into database
+        $stmt = $pdo->prepare("INSERT INTO events 
+            (title, description, img, date, time, location, capacity, created_by, category)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        
+        $stmt->execute([
+            htmlspecialchars($_POST['title']),
+            htmlspecialchars($_POST['description']),
+            $upload_result['filename'],
+            $_POST['date'],
+            $_POST['time'],
+            htmlspecialchars($_POST['location']),
+            (int)$_POST['capacity'],
+            $_SESSION['user_id'],
+            (int)$_POST['category']
+        ]);
+
+        add_flash_message('success', 'Event created successfully!');
+        header('Location: create.php');
+        exit;
+
+    } catch (Exception $e) {
+        add_flash_message('danger', $e->getMessage());
+        header('Location: create.php');
+        exit;
     }
 }
 ?>

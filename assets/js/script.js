@@ -34,55 +34,90 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
 
-    // Handle registration clicks
+    const modalElement = document.getElementById('registrationModal');
+    let modal, currentEventId;
+    modalElement && (modal = new bootstrap.Modal(modalElement));
+
+    // Modified event registration handling
     document.querySelectorAll('.register-btn').forEach(button => {
-        button.addEventListener('click', async (e) => {
+        button.addEventListener('click', (e) => {
             e.preventDefault();
-            const eventId = button.dataset.eventId;
-            const card = button.closest('.event-card');
-
-            try {
-                const response = await fetch('/evs-home/includes/check-login.php');
-                const { loggedIn } = await response.json();
-
-                if (!loggedIn) {
-                    window.location.href = '/evs-home/pages/login.php';
+            
+            // Check if button is disabled or marked as registered
+            if (button.classList.contains('disabled') || button.classList.contains('btn-success')) {
+                return;
+            }
+            
+            // Find the capacity badge for this event
+            const eventCard = button.closest('.event-card') || button.closest('.hero-event');
+            const capacityBadge = eventCard?.querySelector('.badge');
+            
+            if (capacityBadge) {
+                const [current, capacity] = capacityBadge.textContent.split('/').map(Number);
+                
+                // Check if event is full
+                if (current >= capacity) {
+                    showNotification('This event is already full', 'danger');
                     return;
                 }
-
-                const formData = new FormData();
-                formData.append('event_id', eventId);
-
-                const registerResponse = await fetch('/evs-home/includes/attend.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await registerResponse.json();
-
-                if (result.success) {
-                    // Update the clicked button
-                    button.classList.remove('btn-secondary');
-                    button.classList.add('btn-success');
-                    button.textContent = '✓ Registered';
-                    button.disabled = true;
-                    
-                    // Update all instances of this event's capacity
-                    document.querySelectorAll(`[data-event-id="${eventId}"] .capacity-badge`).forEach(badge => {
-                        badge.textContent = `${result.new_count}/${badge.dataset.capacity}`;
-                        badge.classList.toggle('bg-danger', result.new_count >= badge.dataset.capacity);
-                        badge.classList.toggle('bg-primary', result.new_count < badge.dataset.capacity);
-                    });
-                    
-                    showNotification(result.message, 'success');
-                } else {
-                    showNotification(result.message, 'danger');
-                }
-            } catch (error) {
-                showNotification('An error occurred. Please try again.', 'danger');
             }
+            
+            // If we get here, event has capacity - proceed with registration
+            currentEventId = button.dataset.eventId;
+            document.getElementById('modalEventId').value = currentEventId;
+            modal.show();
         });
     });
+
+    // Handle registration clicks
+    // document.querySelectorAll('.register-btn').forEach(button => {
+    //     button.addEventListener('click', async (e) => {
+    //         e.preventDefault();
+    //         const eventId = button.dataset.eventId;
+    //         const card = button.closest('.event-card');
+
+    //         try {
+    //             const response = await fetch('/evs-home/includes/check-login.php');
+    //             const { loggedIn } = await response.json();
+
+    //             if (!loggedIn) {
+    //                 window.location.href = '/evs-home/pages/login.php';
+    //                 return;
+    //             }
+
+    //             const formData = new FormData();
+    //             formData.append('event_id', eventId);
+
+    //             const registerResponse = await fetch('/evs-home/includes/attend.php', {
+    //                 method: 'POST',
+    //                 body: formData
+    //             });
+
+    //             const result = await registerResponse.json();
+
+    //             if (result.success) {
+    //                 // Update the clicked button
+    //                 button.classList.remove('btn-secondary');
+    //                 button.classList.add('btn-success');
+    //                 button.textContent = '✓ Registered';
+    //                 button.disabled = true;
+                    
+    //                 // Update all instances of this event's capacity
+    //                 document.querySelectorAll(`[data-event-id="${eventId}"] .capacity-badge`).forEach(badge => {
+    //                     badge.textContent = `${result.new_count}/${badge.dataset.capacity}`;
+    //                     badge.classList.toggle('bg-danger', result.new_count >= badge.dataset.capacity);
+    //                     badge.classList.toggle('bg-primary', result.new_count < badge.dataset.capacity);
+    //                 });
+                    
+    //                 showNotification(result.message, 'success');
+    //             } else {
+    //                 showNotification(result.message, 'danger');
+    //             }
+    //         } catch (error) {
+    //             showNotification('An error occurred. Please try again.', 'danger');
+    //         }
+    //     });
+    // });
 
     function showNotification(message, type = 'info') {
         const notification = document.createElement('div');
@@ -92,6 +127,62 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setTimeout(() => notification.remove(), 3000);
     }
+
+    // Handle form submission
+    const registrationForm = document.getElementById('registrationForm');
+    registrationForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        submitBtn.disabled = true;
+        
+        try {
+            const response = await fetch('/evs-home/includes/attend.php', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.message);
+            }
+
+            // Update UI
+            modal.hide();
+            showNotification(result.message, 'success');
+            
+            // Update registration count and buttons
+            document.querySelectorAll(`[data-event-id="${currentEventId}"]`).forEach(btn => {
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-success', 'disabled');
+                btn.innerHTML = '✓ Registered';
+            });
+
+            // Update capacity numbers
+            document.querySelectorAll(`[data-event-id="${currentEventId}"] .badge`).forEach(badge => {
+                const current = parseInt(badge.textContent.split('/')[0]);
+                badge.textContent = `${current + 1}/${badge.dataset.capacity}`;
+            });
+
+        } catch (error) {
+            showNotification(error.message, 'danger');
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+
+    // Auto dismiss flash messages
+    const flashMessages = document.querySelectorAll('.alert.auto-dismiss');
+    flashMessages.forEach(function(message) {
+        // Set timeout to remove the message after 3 seconds
+        setTimeout(function() {
+            const alert = bootstrap.Alert.getOrCreateInstance(message);
+            alert.close();
+        }, 2000);
+    });
 });
 
 

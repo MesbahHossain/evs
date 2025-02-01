@@ -4,7 +4,7 @@ require_once '../../includes/auth.php';
 require_once '../../includes/functions.php';
 
 if (!isset($_GET['id'])) {
-    header('Location: ./../../index.php');
+    header('Location: ../../dashboard.php');
     exit;
 }
 
@@ -23,7 +23,7 @@ $event = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$event) {
     add_flash_message('danger', 'Event not found');
-    header('Location: ./../../index.php');
+    header('Location: ../../dashboard.php');
     exit;
 }
 
@@ -84,12 +84,16 @@ include '../../includes/header.php';
                     </div>
                     
                     <div class="mt-2">
-                        <?php if(!is_logged_in()): ?>
-                            <a href="login.php" 
-                            class="btn btn-success w-100 register-btn" 
-                            data-event-id="<?= $event['id'] ?>">
-                                Login to Register
-                            </a>
+                        <?php if(!is_logged_in()):
+                            if ($registered < $event['capacity']): ?>
+                                <a href="login.php" 
+                                class="btn btn-success w-100 register-btn" 
+                                data-event-id="<?= $event['id'] ?>">
+                                    Login to Register
+                                </a>
+                            <?php else: ?>
+                                <div class="alert alert-warning">This event is fully booked</div>
+                            <?php endif; ?>
                         <?php else: 
                             if ($_SESSION['user_id'] == $event['created_by'] || is_admin()): ?>
                                 <a href="edit.php?id=<?= $event['id'] ?>" class="btn btn-warning">Edit Event</a>

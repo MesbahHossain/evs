@@ -1,7 +1,7 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/auth.php';
-require_once '../includes/functions.php';
+require_once 'includes/config.php';
+require_once 'includes/auth.php';
+require_once 'includes/functions.php';
 
 redirect_if_logged_in();
 
@@ -28,9 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 add_flash_message('success', 'Login successful!');
                 // Redirect to the correct page based on the user's role
                 if ($_SESSION['is_admin']) {
-                    header('Location: ../dashboard.php');
+                    header('Location: dashboard.php');
                 } else {
-                    header('Location: ../index.php');
+                    header('Location: index.php');
                 }
                 exit;
             } else {
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php 
 $pageTitle = "Login - Event Management System";
-include '../includes/header.php'; 
+include 'includes/header.php'; 
 ?>
 
 <div class="container mt-5">
@@ -79,4 +79,4 @@ include '../includes/header.php';
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<?php include 'includes/footer.php'; ?>

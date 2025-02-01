@@ -37,10 +37,11 @@ CREATE TABLE events (
 CREATE TABLE attendees (
     id INT PRIMARY KEY AUTO_INCREMENT,
     event_id INT NOT NULL,
-    user_id INT,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL,
+    phone VARCHAR(20),
+    age INT,
+    gender VARCHAR(20),
     registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (event_id) REFERENCES events(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (event_id) REFERENCES events(id)
 );

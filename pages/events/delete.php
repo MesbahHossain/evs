@@ -18,7 +18,7 @@ $owner = $stmt->fetchColumn();
 
 if (!$owner || ($owner != $_SESSION['user_id'] && !is_admin())) {
     add_flash_message('danger', 'Unauthorized operation');
-    header('Location: ../../index.php');
+    header('Location: ../../dashboard.php');
     exit;
 }
 
